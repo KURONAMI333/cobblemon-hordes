@@ -43,9 +43,9 @@ the horde flees when the player walks off. Read the `[HORDELOOP]` (NeoForge) or 
 (Fabric) lines for the details of a run.
 
 Both `:neoforge:runClient` and `:neoforge:runGameTestServer` stage Cobblemon into `run/mods` and
-prepare `run/showdown` first (see below). Launch the client through
-`../_tools/runclient_fresh.sh <this directory> :neoforge:runClient` - naming the task matters,
-because a bare `runClient` in a multiloader project starts Fabric and NeoForge at the same time.
+prepare `run/showdown` first (see below). Name the loader when you launch a client
+(`./gradlew :neoforge:runClient`) - a bare `runClient` in a multiloader project resolves in every
+subproject and starts Fabric and NeoForge at the same time.
 
 ## Showdown errors are visible here, unlike everywhere else
 
