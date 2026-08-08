@@ -1,0 +1,35 @@
+{
+    "schemaVersion": 1,
+    "id": "${mod_id}",
+    "version": "${version}",
+    "name": "${mod_name}",
+    "description": "${description}",
+    "authors": [
+        "${mod_author}"
+    ],
+    "contact": {
+        "homepage": "https://github.com/KURONAMI333/cobblemon-hordes",
+        "sources": "https://github.com/KURONAMI333/cobblemon-hordes",
+        "issues": "https://github.com/KURONAMI333/cobblemon-hordes/issues"
+    },
+    "license": "${license}",
+    "icon": "${mod_id}.png",
+    "environment": "*",
+    "entrypoints": {
+        "main": [
+            "com.kuronami.cobblemonhordes.CobblemonHordes"
+        ]
+    },
+    "mixins": [
+        "${mod_id}.mixins.json",
+        "${mod_id}.fabric.mixins.json"
+    ],
+    "depends": {
+        "fabricloader": ">=0.17.2",
+        "fabric-api": "*",
+        "minecraft": "${minecraft_version}",
+        "java": ">=${java_version}",
+        "cobblemon": "*"
+    }
+}
+  

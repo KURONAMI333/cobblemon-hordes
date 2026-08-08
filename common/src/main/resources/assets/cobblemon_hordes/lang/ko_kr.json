@@ -1,0 +1,12 @@
+{
+  "cobblemon_hordes.configuration.horde_chance_percent": "무리 발생 확률 (%)",
+
+  "advancements.cobblemon_hordes.root": "무리배틀",
+  "advancements.cobblemon_hordes.root.description": "야생 포켓몬은 항상 혼자가 아니다.",
+  "advancements.cobblemon_hordes.encounter_horde": "수의 힘",
+  "advancements.cobblemon_hordes.encounter_horde.description": "야생 포켓몬 무리와 마주친다.",
+  "advancements.cobblemon_hordes.defeat_horde": "수적 열세, 그러나 승리",
+  "advancements.cobblemon_hordes.defeat_horde.description": "무리의 야생 포켓몬을 모두 쓰러뜨린다.",
+  "advancements.cobblemon_hordes.capture_from_horde": "무리 중 한 마리",
+  "advancements.cobblemon_hordes.capture_from_horde.description": "무리 중에서 야생 포켓몬을 한 마리 포획한다."
+}

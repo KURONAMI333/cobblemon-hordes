@@ -1,0 +1,38 @@
+# eclipse
+bin
+*.launch
+.settings
+.metadata
+.classpath
+.project
+
+# idea
+out
+*.ipr
+*.iws
+*.iml
+.idea/*
+!.idea/scopes
+
+# gradle
+build
+.gradle
+
+# other
+eclipse
+run
+runs
+logs
+*.log
+__pycache__/
+
+# 第三者アセットのクローン（Cobblemon 本体のテクスチャ・他アドオンのロゴ）。
+# ロゴ制作の入力としてローカルには要るが、再配布になるので追跡しない。
+branding/_cobblemon_assets/
+branding/_ref/
+branding/_48px_study/
+
+# 統括↔executor の作業文書（公開 repo に入れない・minecraft-mod-dev/CLAUDE.md の規律）
+_handoff/
+GAP_LOG.md
+DESIGN_COMPILE.md

@@ -1,0 +1,20 @@
+plugins {
+    // see https://fabricmc.net/develop/ for new versions
+    // 1.9 rather than the template's 1.8 because 1.8 resolves its Kotlin metadata
+    // remapper as org.jetbrains.kotlinx:kotlinx-metadata-jvm at Loom's own bundled
+    // version, which tops out at Kotlin 2.0 metadata and refuses Cobblemon's 2.2
+    // ("kotlinx-metadata-jvm cannot write metadata for future compiler versions").
+    // 1.9 uses org.jetbrains.kotlin:kotlin-metadata-jvm at the project's Kotlin plugin
+    // version instead. Needs Gradle 8.11 (see gradle/wrapper).
+    id 'fabric-loom' version '1.9-SNAPSHOT' apply false
+    // see https://projects.neoforged.net/neoforged/moddevgradle for new versions
+    id 'net.neoforged.moddev' version '2.0.49-beta' apply false
+    // Applied to :fabric only, and not to compile Kotlin - this project has no Kotlin
+    // sources. Loom builds its Kotlin metadata remapper only when a project carries the
+    // Kotlin plugin (KotlinPluginUtils.hasKotlinPlugin -> KotlinClasspathService, used by
+    // ModProcessor), and without it Cobblemon's remapped jar keeps intermediary class names
+    // inside its @Metadata annotations. Cobblemon reads those with kotlin-reflect during
+    // startup, so the dev server dies in SpeciesAdditions with
+    // "ClassNotFoundException: net.minecraft.class_2960".
+    id 'org.jetbrains.kotlin.jvm' version '2.2.20' apply false
+}

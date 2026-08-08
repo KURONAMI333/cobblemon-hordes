@@ -1,0 +1,12 @@
+{
+  "cobblemon_hordes.configuration.horde_chance_percent": "Horden-Chance (%)",
+
+  "advancements.cobblemon_hordes.root": "Massenbegegnung",
+  "advancements.cobblemon_hordes.root.description": "Nicht jedes wilde Pokémon kommt allein.",
+  "advancements.cobblemon_hordes.encounter_horde": "Stärke in der Zahl",
+  "advancements.cobblemon_hordes.encounter_horde.description": "Triff auf eine Massenbegegnung wilder Pokémon.",
+  "advancements.cobblemon_hordes.defeat_horde": "In der Unterzahl, nicht unterlegen",
+  "advancements.cobblemon_hordes.defeat_horde.description": "Besiege jedes Pokémon einer Massenbegegnung.",
+  "advancements.cobblemon_hordes.capture_from_horde": "Eines aus der Menge",
+  "advancements.cobblemon_hordes.capture_from_horde.description": "Fange ein wildes Pokémon aus einer Massenbegegnung."
+}

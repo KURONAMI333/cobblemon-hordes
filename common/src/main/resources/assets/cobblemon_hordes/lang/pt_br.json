@@ -1,0 +1,12 @@
+{
+  "cobblemon_hordes.configuration.horde_chance_percent": "Chance de bando (%)",
+
+  "advancements.cobblemon_hordes.root": "Encontro em Bando",
+  "advancements.cobblemon_hordes.root.description": "Nem sempre eles aparecem um de cada vez.",
+  "advancements.cobblemon_hordes.encounter_horde": "A força está no número",
+  "advancements.cobblemon_hordes.encounter_horde.description": "Encontre um bando de Pokémon selvagens.",
+  "advancements.cobblemon_hordes.defeat_horde": "Em desvantagem numérica, não derrotado",
+  "advancements.cobblemon_hordes.defeat_horde.description": "Derrote todos os Pokémon de um bando.",
+  "advancements.cobblemon_hordes.capture_from_horde": "Um em meio à multidão",
+  "advancements.cobblemon_hordes.capture_from_horde.description": "Capture um Pokémon selvagem de um bando."
+}

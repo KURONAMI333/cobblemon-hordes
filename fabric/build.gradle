@@ -1,0 +1,208 @@
+plugins {
+    id 'multiloader-loader'
+    id 'fabric-loom'
+    // Present only so Loom remaps Cobblemon's Kotlin metadata (see the root build.gradle
+    // note). No Kotlin sources here; the compileKotlin task has nothing to do.
+    id 'org.jetbrains.kotlin.jvm'
+}
+// Game tests live outside src/main so that neither the test class nor its
+// fabric-gametest entrypoint reaches the published jar. The gametest source set
+// carries its own fabric.mod.json declaring a second, dev-only mod; Fabric's
+// game test API registers test classes from that entrypoint.
+sourceSets {
+    gametest {
+        compileClasspath += sourceSets.main.compileClasspath + sourceSets.main.output
+        runtimeClasspath += sourceSets.main.runtimeClasspath + sourceSets.main.output
+    }
+}
+
+configurations {
+    // Dev-runtime only, never published (NEW_MOD_GUIDE.md trap note). Cobblemon's own
+    // fabric artifact bundles fabric-language-kotlin via jar-in-jar for real installs,
+    // but that only kicks in when Cobblemon is loaded as a real mod jar; the dev
+    // classpath needs the language provider declared directly.
+    localRuntime
+    runtimeClasspath.extendsFrom localRuntime
+
+    // The raw (unremapped) Cobblemon jar, resolved only so prepareShowdown can read
+    // data/cobblemon/showdown.zip out of it.
+    cobblemonArtifact
+}
+
+dependencies {
+    minecraft "com.mojang:minecraft:${minecraft_version}"
+    mappings loom.layered {
+        officialMojangMappings()
+        parchment("org.parchmentmc.data:parchment-${parchment_minecraft}:${parchment_version}@zip")
+    }
+    modImplementation "net.fabricmc:fabric-loader:${fabric_loader_version}"
+    modImplementation "net.fabricmc.fabric-api:fabric-api:${fabric_version}"
+
+    // Cobblemon Fabric artifact. modCompileOnly (not plain compileOnly) so Loom
+    // remaps the MC types baked into Cobblemon's API surface; compileOnly because
+    // it's a required runtime dependency, not something we bundle.
+    // transitive=false to avoid pulling Cobblemon's own dependency tree.
+    modCompileOnly("com.cobblemon:fabric:${cobblemon_version}") { transitive = false }
+
+    // Same artifact on the dev runtime only. Without it the Fabric dev launch has no
+    // Cobblemon at all, and this mod's `depends: cobblemon` makes the loader refuse to
+    // load it - nothing about the mod can be observed. modLocalRuntime (not the plain
+    // localRuntime configuration above) so Loom remaps the MC types Cobblemon is built
+    // against into the dev mappings. Never published: the player installs Cobblemon.
+    modLocalRuntime("com.cobblemon:fabric:${cobblemon_version}") { transitive = false }
+
+    // The loader project compiles :common's Java sources itself (see
+    // multiloader-loader.gradle), so it needs the same Kotlin types (e.g.
+    // kotlin.Pair, used by HordeBattleActor) on its compile classpath. Plain
+    // compileOnly, not mod-aware: this is pure Kotlin stdlib with no MC types
+    // to remap.
+    compileOnly("org.jetbrains.kotlin:kotlin-stdlib:${kotlin_version}")
+
+    // Kotlin language provider Cobblemon's fabric.mod.json requires at runtime.
+    // localRuntime: dev classpath only, never bundled into the published jar.
+    localRuntime "net.fabricmc:fabric-language-kotlin:${fabric_language_kotlin_version}"
+
+    cobblemonArtifact("com.cobblemon:fabric:${cobblemon_version}") { transitive = false }
+}
+
+loom {
+    def aw = project(':common').file("src/main/resources/${mod_id}.accesswidener")
+    if (aw.exists()) {
+        accessWidenerPath.set(aw)
+    }
+    mixin {
+        defaultRefmapName.set("${mod_id}.refmap.json")
+    }
+    runs {
+        client {
+            client()
+            setConfigName('Fabric Client')
+            ideConfigGenerated(true)
+            runDir('runs/client')
+        }
+        server {
+            server()
+            setConfigName('Fabric Server')
+            ideConfigGenerated(true)
+            runDir('runs/server')
+        }
+        // Headless equivalent of :neoforge:runGameTestServer. fabric-gametest-api-v1
+        // hooks net.minecraft.server.Main: with -Dfabric-api.gametest set it skips the
+        // EULA check, replaces the dedicated server with a GameTestServer, and runs
+        // every test class registered through the "fabric-gametest" entrypoint. The
+        // server exits with the number of failed required tests, so gradle's exit code
+        // is the primary verdict, exactly as on NeoForge.
+        gametest {
+            server()
+            setConfigName('Fabric Game Test')
+            ideConfigGenerated(true)
+            runDir('runs/gametest')
+            source sourceSets.gametest
+            vmArg '-Dfabric-api.gametest=true'
+            vmArg "-Dfabric-api.gametest.report-file=${project.file('runs/gametest-report.xml')}"
+        }
+    }
+}
+
+// Cobblemon's Showdown bridge swallows every asynchronous JS exception (see the
+// same task in neoforge/build.gradle for the full reasoning). Without this, a
+// Showdown-side TypeError on Fabric is indistinguishable from a battle that
+// simply stops progressing.
+// Cobblemon unbundles Showdown into <gameDir>/showdown, and each Loom run has its own
+// game directory, so this is registered once per run rather than once for the project.
+def showdownPatchMarker = 'SHOWDOWN-ASYNC-ERROR'
+def registerPrepareShowdown = { String runName, String runDir ->
+tasks.register("prepareShowdown${runName.capitalize()}") {
+    description = "Unbundles Cobblemon's Showdown into ${runDir} with async exceptions made visible."
+    def showdownRunDir = file("${runDir}/showdown")
+    def cobblemonJars = configurations.cobblemonArtifact
+    inputs.files(cobblemonJars)
+    outputs.dir(showdownRunDir)
+    doLast {
+        // cobblemonArtifact holds exactly the Cobblemon jar (transitive = false).
+        def jarFile = cobblemonJars.singleFile
+
+        def zip = new java.util.zip.ZipFile(jarFile)
+        try {
+            def metaEntry = zip.getEntry('data/cobblemon/showdown.json')
+            if (metaEntry == null) {
+                throw new GradleException("data/cobblemon/showdown.json missing from ${jarFile}")
+            }
+            def bundledMeta = zip.getInputStream(metaEntry).bytes
+
+            // The sole `})();` in this file closes the battle-output IIFE.
+            def anchor = '\t})();'
+            def installedMetaFile = new File(showdownRunDir, 'showdown.json')
+            def indexFile = new File(showdownRunDir, 'index.js')
+            def installedIndex = indexFile.exists() ? indexFile.getText('UTF-8') : null
+            def needsExtract = installedIndex == null || !installedMetaFile.exists() ||
+                    installedMetaFile.bytes != bundledMeta ||
+                    (!installedIndex.contains(showdownPatchMarker) && !installedIndex.contains(anchor))
+
+            if (needsExtract) {
+                def showdownEntry = zip.getEntry('data/cobblemon/showdown.zip')
+                if (showdownEntry == null) {
+                    throw new GradleException("data/cobblemon/showdown.zip missing from ${jarFile}")
+                }
+                def stagedZip = new File(temporaryDir, 'showdown.zip')
+                stagedZip.parentFile.mkdirs()
+                stagedZip.withOutputStream { out -> out << zip.getInputStream(showdownEntry) }
+
+                showdownRunDir.deleteDir()
+                showdownRunDir.mkdirs()
+                def inner = new java.util.zip.ZipFile(stagedZip)
+                try {
+                    inner.entries().each { entry ->
+                        def target = new File(showdownRunDir, entry.name)
+                        if (entry.directory) {
+                            target.mkdirs()
+                        } else {
+                            target.parentFile.mkdirs()
+                            target.withOutputStream { out -> out << inner.getInputStream(entry) }
+                        }
+                    }
+                } finally {
+                    inner.close()
+                }
+                installedMetaFile.bytes = bundledMeta
+                logger.lifecycle("prepareShowdown: unbundled Showdown into ${showdownRunDir}")
+            }
+
+            def source = indexFile.getText('UTF-8')
+            if (source.contains(showdownPatchMarker)) {
+                logger.lifecycle('prepareShowdown: index.js already reports async Showdown errors')
+                return
+            }
+            if (!source.contains(anchor)) {
+                throw new GradleException(
+                        'prepareShowdown: could not find the battle-output IIFE in showdown/index.js. ' +
+                        'Showdown\'s bridge changed shape - re-derive the patch before trusting battle logs.')
+            }
+            def patched = source.replace(anchor,
+                    '\t})().catch((err) => {\n' +
+                    '\t\tgraalShowdown.log(\'[' + showdownPatchMarker + '] \' + battleId + \' \' + ((err && err.stack) ? err.stack : err));\n' +
+                    '\t});')
+            indexFile.setText(patched, 'UTF-8')
+            logger.lifecycle('prepareShowdown: patched showdown/index.js to surface async Showdown errors')
+        } finally {
+            zip.close()
+        }
+    }
+}
+}
+
+// Every run that can start a battle needs the patch, not just the game test one -
+// an unpatched Showdown turns a JS error into "the battle simply stopped", which is
+// the blind alley the remaining runClient work would otherwise walk into.
+['gametest': 'runs/gametest', 'client': 'runs/client', 'server': 'runs/server'].each { runName, runDir ->
+    def prepareTask = registerPrepareShowdown(runName, runDir)
+    tasks.named("run${runName.capitalize()}").configure {
+        dependsOn prepareTask
+    }
+}
+
+// A custom source set is not wired into assemble/check, so a change in :common that
+// breaks the tests would otherwise go unnoticed until somebody ran them.
+tasks.named('check').configure {
+    dependsOn tasks.named('gametestClasses')
+}

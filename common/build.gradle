@@ -1,0 +1,61 @@
+plugins {
+    id 'multiloader-common'
+    id 'net.neoforged.moddev'
+}
+
+neoForge {
+    neoFormVersion = neo_form_version
+    // Automatically enable AccessTransformers if the file exists
+    def at = file('src/main/resources/META-INF/accesstransformer.cfg')
+    if (at.exists()) {
+        accessTransformers.from(at.absolutePath)
+    }
+    parchment {
+        minecraftVersion = parchment_minecraft
+        mappingsVersion = parchment_version
+    }
+}
+
+dependencies {
+    compileOnly group: 'org.spongepowered', name: 'mixin', version: '0.8.5'
+    // fabric and neoforge both bundle mixinextras, so it is safe to use it in common
+    compileOnly group: 'io.github.llamalad7', name: 'mixinextras-common', version: '0.3.5'
+    annotationProcessor group: 'io.github.llamalad7', name: 'mixinextras-common', version: '0.3.5'
+
+    // Cobblemon: common is NeoForm (vanilla), not Loom, so modImplementation isn't
+    // available here. compileOnly only (each loader module supplies the real impl
+    // at runtime); transitive=false to avoid pulling Cobblemon's own dependency
+    // tree (Kotlin, GeckoLib, etc.) into our classpath.
+    //
+    // Use the :neoforge artifact rather than :mod. com.cobblemon:mod is published
+    // against INTERMEDIARY mappings (net.minecraft.class_1309 etc), which this
+    // NeoForm/Mojmap project cannot link against for any signature that mentions a
+    // Minecraft type. com.cobblemon:neoforge is Mojmap (NeoForge has been Mojmap
+    // since 1.20.2), matching this project's mappings, so full Cobblemon
+    // signatures - including MC types - resolve here too.
+    compileOnly("com.cobblemon:neoforge:${cobblemon_version}") { transitive = false }
+
+    // Cobblemon's Kotlin API surface (e.g. kotlin.Pair return types) needs the
+    // Kotlin stdlib on this project's own compile classpath too - transitive = false
+    // above keeps it from riding in with Cobblemon. Compile-time only: neither
+    // loader bundles Kotlin classes into common's recompiled sources; each loader
+    // supplies its own Kotlin runtime (Kotlin For Forge / fabric-language-kotlin).
+    compileOnly("org.jetbrains.kotlin:kotlin-stdlib:${kotlin_version}")
+}
+
+configurations {
+    commonJava {
+        canBeResolved = false
+        canBeConsumed = true
+    }
+    commonResources {
+        canBeResolved = false
+        canBeConsumed = true
+    }
+}
+
+artifacts {
+    commonJava sourceSets.main.java.sourceDirectories.singleFile
+    commonResources sourceSets.main.resources.sourceDirectories.singleFile
+}
+

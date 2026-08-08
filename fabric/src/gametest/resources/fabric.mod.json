@@ -1,0 +1,17 @@
+{
+    "schemaVersion": 1,
+    "id": "cobblemon_hordes_gametest",
+    "version": "1.0.0",
+    "name": "Cobblemon Horde Battles Game Tests",
+    "description": "Dev-only game tests for Cobblemon Horde Battles. Never published.",
+    "environment": "*",
+    "entrypoints": {
+        "fabric-gametest": [
+            "com.kuronami.cobblemonhordes.gametest.FabricHordeGameTests"
+        ]
+    },
+    "depends": {
+        "cobblemon_hordes": "*",
+        "cobblemon": "*"
+    }
+}

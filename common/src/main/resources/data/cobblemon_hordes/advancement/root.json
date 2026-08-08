@@ -1,0 +1,21 @@
+{
+  "display": {
+    "icon": {
+      "id": "cobblemon:poke_ball"
+    },
+    "title": {
+      "translate": "advancements.cobblemon_hordes.root"
+    },
+    "description": {
+      "translate": "advancements.cobblemon_hordes.root.description"
+    },
+    "background": "cobblemon:textures/gui/advancements/backgrounds/cobblemon.png",
+    "show_toast": false,
+    "announce_to_chat": false
+  },
+  "criteria": {
+    "tick": {
+      "trigger": "minecraft:tick"
+    }
+  }
+}

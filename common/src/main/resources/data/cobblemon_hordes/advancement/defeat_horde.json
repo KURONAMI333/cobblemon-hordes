@@ -1,0 +1,25 @@
+{
+  "display": {
+    "icon": {
+      "id": "cobblemon:black_belt"
+    },
+    "title": {
+      "translate": "advancements.cobblemon_hordes.defeat_horde"
+    },
+    "description": {
+      "translate": "advancements.cobblemon_hordes.defeat_horde.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": false
+  },
+  "parent": "cobblemon_hordes:encounter_horde",
+  "criteria": {
+    "defeat": {
+      "trigger": "cobblemon_hordes:horde_event",
+      "conditions": {
+        "moment": "defeated"
+      }
+    }
+  }
+}

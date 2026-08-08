@@ -1,0 +1,12 @@
+{
+  "cobblemon_hordes.configuration.horde_chance_percent": "Probabilidad de horda (%)",
+
+  "advancements.cobblemon_hordes.root": "Encuentro de horda",
+  "advancements.cobblemon_hordes.root.description": "A veces no vienen de uno en uno.",
+  "advancements.cobblemon_hordes.encounter_horde": "La fuerza está en el número",
+  "advancements.cobblemon_hordes.encounter_horde.description": "Encuentra una horda de Pokémon salvajes.",
+  "advancements.cobblemon_hordes.defeat_horde": "En inferioridad, no en desventaja",
+  "advancements.cobblemon_hordes.defeat_horde.description": "Derrota a todos los Pokémon de una horda.",
+  "advancements.cobblemon_hordes.capture_from_horde": "Uno entre la multitud",
+  "advancements.cobblemon_hordes.capture_from_horde.description": "Captura un Pokémon salvaje de una horda."
+}

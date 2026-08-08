@@ -1,0 +1,12 @@
+{
+  "cobblemon_hordes.configuration.horde_chance_percent": "群聚战概率 (%)",
+
+  "advancements.cobblemon_hordes.root": "群聚对战",
+  "advancements.cobblemon_hordes.root.description": "野生宝可梦并非总是独自出现。",
+  "advancements.cobblemon_hordes.encounter_horde": "数量就是力量",
+  "advancements.cobblemon_hordes.encounter_horde.description": "遇到一群野生宝可梦。",
+  "advancements.cobblemon_hordes.defeat_horde": "寡不敌众？未必",
+  "advancements.cobblemon_hordes.defeat_horde.description": "击败群聚中的所有宝可梦。",
+  "advancements.cobblemon_hordes.capture_from_horde": "从群聚中带走一只",
+  "advancements.cobblemon_hordes.capture_from_horde.description": "从群聚中捕获一只野生宝可梦。"
+}

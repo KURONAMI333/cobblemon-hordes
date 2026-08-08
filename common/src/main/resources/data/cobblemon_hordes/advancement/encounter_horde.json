@@ -1,0 +1,25 @@
+{
+  "display": {
+    "icon": {
+      "id": "minecraft:spyglass"
+    },
+    "title": {
+      "translate": "advancements.cobblemon_hordes.encounter_horde"
+    },
+    "description": {
+      "translate": "advancements.cobblemon_hordes.encounter_horde.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": false
+  },
+  "parent": "cobblemon_hordes:root",
+  "criteria": {
+    "encounter": {
+      "trigger": "cobblemon_hordes:horde_event",
+      "conditions": {
+        "moment": "encountered"
+      }
+    }
+  }
+}

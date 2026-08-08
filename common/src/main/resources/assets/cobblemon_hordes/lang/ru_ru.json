@@ -1,0 +1,12 @@
+{
+  "cobblemon_hordes.configuration.horde_chance_percent": "Шанс стаи (%)",
+
+  "advancements.cobblemon_hordes.root": "Схватка со стаей",
+  "advancements.cobblemon_hordes.root.description": "Иногда они появляются не поодиночке.",
+  "advancements.cobblemon_hordes.encounter_horde": "Сила в числе",
+  "advancements.cobblemon_hordes.encounter_horde.description": "Встретьте стаю диких покемонов.",
+  "advancements.cobblemon_hordes.defeat_horde": "В меньшинстве, но не побеждены",
+  "advancements.cobblemon_hordes.defeat_horde.description": "Победите всех покемонов в стае.",
+  "advancements.cobblemon_hordes.capture_from_horde": "Один из стаи",
+  "advancements.cobblemon_hordes.capture_from_horde.description": "Поймайте дикого покемона из стаи."
+}

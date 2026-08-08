@@ -1,0 +1,25 @@
+{
+  "display": {
+    "icon": {
+      "id": "cobblemon:premier_ball"
+    },
+    "title": {
+      "translate": "advancements.cobblemon_hordes.capture_from_horde"
+    },
+    "description": {
+      "translate": "advancements.cobblemon_hordes.capture_from_horde.description"
+    },
+    "frame": "goal",
+    "show_toast": true,
+    "announce_to_chat": false
+  },
+  "parent": "cobblemon_hordes:encounter_horde",
+  "criteria": {
+    "capture": {
+      "trigger": "cobblemon_hordes:horde_event",
+      "conditions": {
+        "moment": "captured"
+      }
+    }
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "cobblemon_hordes.configuration.horde_chance_percent": "Horde chance (%)",
+
+  "advancements.cobblemon_hordes.root": "Horde Battles",
+  "advancements.cobblemon_hordes.root.description": "Sometimes they don't come one at a time.",
+  "advancements.cobblemon_hordes.encounter_horde": "Strength in Numbers",
+  "advancements.cobblemon_hordes.encounter_horde.description": "Run into a horde of wild Pokémon.",
+  "advancements.cobblemon_hordes.defeat_horde": "Outnumbered, Not Outmatched",
+  "advancements.cobblemon_hordes.defeat_horde.description": "Defeat every Pokémon in a horde.",
+  "advancements.cobblemon_hordes.capture_from_horde": "One From the Crowd",
+  "advancements.cobblemon_hordes.capture_from_horde.description": "Catch a wild Pokémon out of a horde."
+}

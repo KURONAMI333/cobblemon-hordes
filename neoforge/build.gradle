@@ -1,0 +1,200 @@
+plugins {
+    id 'multiloader-loader'
+    id 'net.neoforged.moddev'
+}
+
+neoForge {
+    version = neoforge_version
+    // Automatically enable neoforge AccessTransformers if the file exists
+    def at = project(':common').file('src/main/resources/META-INF/accesstransformer.cfg')
+    if (at.exists()) {
+        accessTransformers.from(at.absolutePath)
+    }
+    parchment {
+        minecraftVersion = parchment_minecraft
+        mappingsVersion = parchment_version
+    }
+    runs {
+        configureEach {
+            systemProperty('neoforge.enabledGameTestNamespaces', mod_id)
+            ideName = "NeoForge ${it.name.capitalize()} (${project.path})" // Unify the run config names with fabric
+        }
+        client {
+            client()
+        }
+        data {
+            data()
+
+            // DataGen can be run by - "./gradlew :neoforge:runData" in Terminal.
+            // Specify the modid for data generation, where to output the resulting resource, and where to look for existing resources.
+            programArguments.addAll '--mod', project.mod_id, '--all', '--output', file('src/generated/resources/').getAbsolutePath(), '--existing', file('src/main/resources/').getAbsolutePath()
+
+        }
+        server {
+            server()
+        }
+        gameTestServer {
+            type = 'gameTestServer'
+        }
+    }
+    mods {
+        "${mod_id}" {
+            sourceSet sourceSets.main
+        }
+    }
+}
+
+sourceSets.main.resources { srcDir 'src/generated/resources' }
+
+// GameTest classes compile inside src/main (moddev-gradle's @GameTestHolder scanning only
+// covers sourceSets registered under mods{}, and there is one mod here), so they must stay
+// there for runGameTestServer to find them. Excluding the compiled classes from the jar task
+// keeps them out of the published artifact without moving the sources - runGameTestServer
+// runs off sourceSets.main.output directly, never the assembled jar, so this exclusion does
+// not affect it. Mirrors the intent of :fabric's isolated gametest source set (see
+// fabric/build.gradle), by a different mechanism because moddev-gradle's mods{} block has no
+// equivalent to Loom's per-run `source sourceSets.gametest`.
+tasks.named('jar', Jar) {
+    exclude 'com/kuronami/cobblemonhordes/HordeLoopGameTests*.class'
+    exclude 'com/kuronami/cobblemonhordes/HordeSpikeGameTests*.class'
+}
+
+repositories {
+    // Kotlin for Forge - Cobblemon's neoforge.mods.toml declares
+    // modLoader="kotlinforforge", so the language provider must be present at
+    // dev runtime or Cobblemon will not load.
+    maven {
+        name = 'KotlinForForge'
+        url = 'https://thedarkcolour.github.io/KotlinForForge/'
+    }
+}
+
+configurations {
+    // Mod jars staged into run/mods so FML's mods-folder locator finds them.
+    devMods
+}
+
+dependencies {
+    // Cobblemon NeoForge artifact. compileOnly: Cobblemon is a required runtime
+    // dependency the player installs separately, not something we bundle.
+    // transitive=false to avoid pulling Cobblemon's own dependency tree.
+    compileOnly("com.cobblemon:neoforge:${cobblemon_version}") { transitive = false }
+    // The loader project compiles :common's Java sources itself (see
+    // multiloader-loader.gradle), so it needs the same Kotlin types on its
+    // compile classpath.
+    compileOnly("org.jetbrains.kotlin:kotlin-stdlib:${kotlin_version}")
+
+    // Dev-runtime only (never published). The Kotlin language provider has to be
+    // on the classpath - FML picks the provider up as a service. Cobblemon itself
+    // cannot come in this way: MDG's dev launch discovers mods from the mods{}
+    // block and the run directory only, so a classpath jar's neoforge.mods.toml
+    // is never read (observed: "Currently, cobblemon is not installed").
+    additionalRuntimeClasspath("thedarkcolour:kotlinforforge-neoforge:${kotlinforforge_version}")
+
+    devMods("com.cobblemon:neoforge:${cobblemon_version}") { transitive = false }
+}
+
+def copyDevMods = tasks.register('copyDevMods', Copy) {
+    from configurations.devMods
+    into file('run/mods')
+}
+
+// Cobblemon's Showdown bridge swallows every asynchronous JS exception: the
+// `for await` IIFE in showdown/index.js has no .catch(), so a Showdown-side
+// TypeError produces no output at all - the battle simply stops progressing.
+// Cobblemon unbundles showdown.zip into the run directory itself on first server
+// start (GraalShowdownUnbundler), which means a hand-applied patch is lost every
+// time the run directory is cleaned or Showdown's bundled version changes.
+//
+// Unbundle it ourselves before the run instead, patch index.js, and write the
+// matching showdown.json. GraalShowdownUnbundler compares that file against the
+// one inside the jar and skips extraction when they agree, so our patched copy
+// survives; when Cobblemon ships a new Showdown the versions stop matching, this
+// task re-extracts from the new jar and re-applies the patch.
+def showdownRunDir = file('run/showdown')
+def showdownPatchMarker = 'SHOWDOWN-ASYNC-ERROR'
+def prepareShowdown = tasks.register('prepareShowdown') {
+    description = 'Unbundles Cobblemon\'s Showdown into run/showdown with async exceptions made visible.'
+    def devModJars = configurations.devMods
+    inputs.files(devModJars)
+    outputs.dir(showdownRunDir)
+    doLast {
+        // devMods holds exactly the Cobblemon artifact (transitive = false).
+        def jarFile = devModJars.singleFile
+
+        def bundledMeta = null
+        def zip = new java.util.zip.ZipFile(jarFile)
+        try {
+            def metaEntry = zip.getEntry('data/cobblemon/showdown.json')
+            if (metaEntry == null) {
+                throw new GradleException("data/cobblemon/showdown.json missing from ${jarFile}")
+            }
+            bundledMeta = zip.getInputStream(metaEntry).bytes
+
+            // The sole `})();` in this file closes the battle-output IIFE.
+            def anchor = '\t})();'
+            def installedMetaFile = new File(showdownRunDir, 'showdown.json')
+            def indexFile = new File(showdownRunDir, 'index.js')
+            def installedIndex = indexFile.exists() ? indexFile.getText('UTF-8') : null
+            // Re-extract when the install is missing, stale, or has been edited by hand into a
+            // shape this task can neither recognise as patched nor patch again.
+            def needsExtract = installedIndex == null || !installedMetaFile.exists() ||
+                    installedMetaFile.bytes != bundledMeta ||
+                    (!installedIndex.contains(showdownPatchMarker) && !installedIndex.contains(anchor))
+
+            if (needsExtract) {
+                def showdownEntry = zip.getEntry('data/cobblemon/showdown.zip')
+                if (showdownEntry == null) {
+                    throw new GradleException("data/cobblemon/showdown.zip missing from ${jarFile}")
+                }
+                def stagedZip = new File(temporaryDir, 'showdown.zip')
+                stagedZip.parentFile.mkdirs()
+                stagedZip.withOutputStream { out -> out << zip.getInputStream(showdownEntry) }
+
+                showdownRunDir.deleteDir()
+                showdownRunDir.mkdirs()
+                def inner = new java.util.zip.ZipFile(stagedZip)
+                try {
+                    inner.entries().each { entry ->
+                        def target = new File(showdownRunDir, entry.name)
+                        if (entry.directory) {
+                            target.mkdirs()
+                        } else {
+                            target.parentFile.mkdirs()
+                            target.withOutputStream { out -> out << inner.getInputStream(entry) }
+                        }
+                    }
+                } finally {
+                    inner.close()
+                }
+                installedMetaFile.bytes = bundledMeta
+                logger.lifecycle("prepareShowdown: unbundled Showdown into ${showdownRunDir}")
+            }
+
+            def index = new File(showdownRunDir, 'index.js')
+            def source = index.getText('UTF-8')
+            if (source.contains(showdownPatchMarker)) {
+                logger.lifecycle('prepareShowdown: index.js already reports async Showdown errors')
+                return
+            }
+            if (!source.contains(anchor)) {
+                throw new GradleException(
+                        'prepareShowdown: could not find the battle-output IIFE in showdown/index.js. ' +
+                        'Showdown\'s bridge changed shape - re-derive the patch before trusting battle logs.')
+            }
+            def patched = source.replace(anchor,
+                    '\t})().catch((err) => {\n' +
+                    '\t\tgraalShowdown.log(\'[' + showdownPatchMarker + '] \' + battleId + \' \' + ((err && err.stack) ? err.stack : err));\n' +
+                    '\t});')
+            index.setText(patched, 'UTF-8')
+            logger.lifecycle('prepareShowdown: patched showdown/index.js to surface async Showdown errors')
+        } finally {
+            zip.close()
+        }
+    }
+}
+
+tasks.matching { it.name.startsWith('prepare') && it.name.endsWith('Run') }.configureEach {
+    dependsOn copyDevMods
+    dependsOn prepareShowdown
+}
