@@ -32,7 +32,7 @@ branding/_cobblemon_assets/
 branding/_ref/
 branding/_48px_study/
 
-# 統括↔executor の作業文書（公開 repo に入れない・minecraft-mod-dev/CLAUDE.md の規律）
+# 作業文書（公開 repo に入れない）
 _handoff/
 GAP_LOG.md
 DESIGN_COMPILE.md
